@@ -15,7 +15,11 @@ def parse_maxidom_products(base_url):
 
     # Извлекаем номер последней страницы из пагинации
     pagination = soup.find('div', class_='lvl2__content-nav-numbers-number')
-    last_page = int(pagination.find_all('a')[-1].text.strip())
+    if pagination:
+        last_page = int(pagination.find_all('a')[-1].text.strip())
+    else:
+        print("Ошибка при извлечении последней страницы из пагинации")
+        return products
 
     # Функция для извлечения информации о товарах с текущей страницы
     def extract_data_products(soup):
@@ -23,9 +27,15 @@ def parse_maxidom_products(base_url):
         name_products = soup.find_all('div', class_='l-product__name')
 
         for name_product, price_product in zip(name_products, price_products):
-            product_name = name_product.find('span', itemprop="name").text.strip()
-            product_price = price_product.find('span', itemprop="price").text.strip()
-            products.append({'name': product_name, 'price': product_price})
+            product_name = name_product.find('span', itemprop="name")
+            product_price = price_product.find('span', itemprop="price")
+
+            if product_name and product_price:
+                product_name_text = product_name.text.strip()
+                product_price_text = product_price.text.strip()
+                products.append({'name': product_name_text, 'price': product_price_text})
+            else:
+                print("Не удалось извлечь данные о товаре")
 
     # Обрабатываем каждую страницу
     for page in range(1, last_page + 1):
@@ -49,42 +59,3 @@ if __name__ == "__main__":
     # Форматированный вывод
     for product in result:
         print(f"Товар: {product['name']}, цена: {product['price']}")
-
-#
-# import requests as rq
-# from bs4 import BeautifulSoup
-#
-#
-# def parse_maxidom():
-#     products = []
-#     url = 'https://www.maxidom.ru/catalog/kraski-i-emali/'
-#     while url:
-#         response = rq.get(url)
-#         soup = BeautifulSoup(response.text, 'lxml')
-#
-#         # Находим все товары на странице
-#         items_name = soup.find_all('div', class_='l-product__name')
-#         items_price = soup.find_all('div', class_='l-product__buy')
-#
-#         for i in range(len(items_name)):
-#             title = items_name[i].find('span', itemprop='name').text.strip()
-#             price = items_price[i].find('div', class_='l-product__price-base').text.strip()
-#             products.append({'title': title, 'price': int("".join(filter(str.isdigit, price)))})
-#
-#         # Переход на следующую страницу
-#         next_page = soup.find('div', class_='lvl2__content-nav-numbers-number').find_all('a')
-#         if len(next_page) == 3 and next_page[1]['href'] != '#':
-#             url = 'https://www.maxidom.ru' + next_page[1]['href']
-#         elif len(next_page) == 4:
-#             url = 'https://www.maxidom.ru' + next_page[2]['href']
-#         elif len(next_page) == 3 and next_page[1]['href'] == '#':
-#             url = 'https://www.maxidom.ru' + next_page[2]['href']
-#         else:
-#             url = None
-#     return products
-#
-#
-# if __name__ == "__main__":
-#     product_data = parse_maxidom()
-#     for product in product_data:
-#         print(f"Товар: {product['title']}, Цена: {product['price']}")
